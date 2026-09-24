@@ -2644,11 +2644,12 @@ const App = () => {
     const result = qualifyLead(data);
     try {
       const res = await submitToHubSpot(data, result);
-      window.trackEvent && window.trackEvent('form_submit', { qualified: !!result.qualified });
+      const userData = { user_email: (data.email || '').trim().toLowerCase(), user_phone: `${data.phoneCode || ''}${(data.phone || '').replace(/\s/g, '')}` };
+      window.trackEvent && window.trackEvent('form_submit', { qualified: !!result.qualified, ...userData });
       if (res && res.ok) {
         // GA4 recommended event name for lead-gen conversions — flag this as a
         // Key Event in GA4 Admin > Events so it counts in conversion reports.
-        window.trackEvent && window.trackEvent('generate_lead', { qualified: !!result.qualified });
+        window.trackEvent && window.trackEvent('generate_lead', { qualified: !!result.qualified, ...userData });
       }
       setDone(result);
     } catch (err) {
