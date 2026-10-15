@@ -49,7 +49,7 @@
     --radius-lg: 24px;
     --radius-xl: 32px;
 
-    --font: 'Suisse Intl', 'Suisse Int\'l', "Suisse Int'l", 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
     --ease-onward: cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -142,8 +142,6 @@
     align-items: baseline;
     font-size: 12px;
     color: var(--text-faint);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     margin-bottom: 8px;
   }
   .progress-meta strong {
@@ -1182,7 +1180,13 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 100ms !important; }
   }
+  #beehive-form .stage.is-done{min-height:600px;box-sizing:border-box;justify-content:center}
+  #beehive-form .stage.is-done > .main{flex:0 0 auto}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>html,body{overflow:hidden}</style>
 <template id="__bundler_thumbnail">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
     <rect width="100" height="100" fill="#FFFFFF"/>
@@ -2406,6 +2410,16 @@ const StepContactB = ({ data, set, errors }) => {
         </span>
       </label>
       {errors.terms && <div className="tc-err">{errors.terms}</div>}
+      <label className="tc-row">
+        <input
+          type="checkbox"
+          checked={!!data.marketingOptIn}
+          onChange={(e) => set({ marketingOptIn: e.target.checked })}
+        />
+        <span className="tc-text">
+          Yes, I'd like to receive Beehive's newsletter, funding insights and exclusive offers by email, WhatsApp and SMS. I can unsubscribe at any time.
+        </span>
+      </label>
     </>
   );
 };
@@ -2521,6 +2535,7 @@ const submitToHubSpot = async (data, result) => {
     { objectTypeId: '0-1', name: map.qualified, value: result.qualified ? 'Eligible' : 'Not eligible' },
     { objectTypeId: '0-1', name: 'lead_source', value: 'Marketing Inbound' },
     { objectTypeId: '0-1', name: 'marketing_origin', value: 'Beehive SME Funding Google Ads' },
+    { objectTypeId: '0-1', name: 'marketing_email_opt_in', value: data.marketingOptIn ? 'true' : 'false' },
     // Company object — the form has a required "Company name" field (0-2/name)
     { objectTypeId: '0-2', name: 'name', value: data.businessName },
   ];
@@ -2559,7 +2574,7 @@ const saveCache = (data) => {
 const DEFAULT_DATA = {
   businessAge: '', sector: '', industry: '',
   revenue: 3_000_000, loanAmount: 500_000, revenueTouched: false, loanTouched: false,
-  name: '', businessName: '', email: '', phoneCode: '+971', phone: '', terms: false,
+  name: '', businessName: '', email: '', phoneCode: '+971', phone: '', terms: false, marketingOptIn: false,
 };
 
 // ============================================================================
@@ -2580,7 +2595,7 @@ const App = () => {
   }, [tweaks.theme, tweaks.accent]);
 
   // Load cached answers on mount
-  const [data, setData] = useState(() => ({ ...DEFAULT_DATA, ...(loadCache() || {}) }));
+  const [data, setData] = useState(() => ({ ...DEFAULT_DATA, ...(loadCache() || {}), terms: false, marketingOptIn: false }));
   const set = (patch) => setData((d) => {
     const next = { ...d, ...patch };
     saveCache(next);
@@ -2726,7 +2741,7 @@ const App = () => {
   const hasCachedData = data.businessAge || data.sector || data.industry;
 
   return (
-    <div className="stage">
+    <div className={`stage ${done ? 'is-done' : ''}`}>
       {!done && stepIdx === 0 && (
         <div className="card-head">
           <h2>Check your eligibility</h2>
@@ -2892,8 +2907,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 (function reportHeight() {
   var last = 0;
   const measure = () => {
-    const b = document.body, d = document.documentElement;
-    return Math.ceil(Math.max(b.scrollHeight, b.offsetHeight, d.scrollHeight, d.offsetHeight));
+    const el = document.getElementById('beehive-form');
+    if (el) return Math.ceil(el.getBoundingClientRect().height);
+    const b = document.body;
+    return Math.ceil(Math.max(b.scrollHeight, b.offsetHeight));
   };
   const send = () => {
     const h = measure();
@@ -2908,7 +2925,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   }
   new MutationObserver(send).observe(document.body, { childList: true, subtree: true, attributes: true });
   window.addEventListener('resize', send);
-  [0, 100, 300, 600, 1000].forEach((t) => setTimeout(send, t));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(send);
+  [0, 100, 300, 600, 1000, 2000, 3500].forEach((t) => setTimeout(send, t));
 })();
 
   </script>
